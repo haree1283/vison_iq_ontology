@@ -1,0 +1,18 @@
+# NH5 Highway - exact versions from the original machine (Python 3.10, CUDA GPU)
+# On a GPU machine install torch/torchvision for your CUDA from pytorch.org and paddlepaddle-gpu if wanted.
+flask==3.1.3
+flask-sock==0.7.0
+opencv-python==5.0.0.93
+numpy==2.1.3
+torch==2.12.0
+torchvision==0.27.0
+ultralytics==8.4.53
+openpyxl==3.1.5
+paddleocr==3.7.0
+paddlepaddle==3.3.1
+onnx==1.22.0
+onnxruntime==1.22.1
+onnxslim==0.1.96
+matplotlib==3.10.9
+reportlab==3.6.8
+requests==2.33.1

@@ -1,0 +1,105 @@
+== quantize minmax
+minmax: 600 calibration images, 24 decode nodes kept FP32
+    raise ValueError("No data is collected.")
+ValueError: No data is collected.
+== quantize entropy
+entropy: 600 calibration images, 24 decode nodes kept FP32
+saved /home/nikhil/Downloads/NH5 Highway/runs/onnx/nh5_v8_int8_entropy.onnx (3.7 MB) in 436s
+== quantize percentile
+percentile: 600 calibration images, 24 decode nodes kept FP32
+saved /home/nikhil/Downloads/NH5 Highway/runs/onnx/nh5_v8_int8_percentile.onnx (3.7 MB) in 416s
+== val pt
+[pt]                    all       8040      41605      0.785      0.762      0.818      0.606
+[pt]                 person       2889      11518      0.761      0.736      0.801       0.59
+[pt]                bicycle        342        572      0.704      0.753       0.74      0.508
+[pt]                    car       4726      13224       0.85      0.854      0.916      0.788
+[pt]             motorcycle       1153       3225      0.834      0.784      0.871       0.62
+[pt]                    bus        817       1552      0.795        0.8      0.851      0.697
+[pt]                  truck       2203       3491       0.73      0.736      0.792      0.665
+[pt]                pothole        353        802      0.717        0.5      0.597      0.312
+[pt]          license_plate       1901       2062      0.935      0.873      0.939      0.772
+[pt]                   auto        955       2286      0.839      0.875      0.921      0.724
+[pt]      road_construction       1329       1329      0.744      0.631      0.745      0.436
+[pt]         accident_scene        851        942      0.798      0.725      0.802      0.531
+[pt]          fire_accident        602        602      0.717      0.872      0.837       0.63
+[pt] Speed: 1.0ms preprocess, 2.2ms inference, 0.0ms loss, 0.4ms postprocess per image
+== val fp32_onnx
+[fp32_onnx]                    all       8040      41605      0.784       0.76      0.814        0.6
+[fp32_onnx]                 person       2889      11518       0.76      0.735      0.799      0.589
+[fp32_onnx]                bicycle        342        572      0.708      0.732      0.737      0.514
+[fp32_onnx]                    car       4726      13224      0.847      0.856      0.914      0.777
+[fp32_onnx]             motorcycle       1153       3225      0.828      0.786       0.87      0.618
+[fp32_onnx]                    bus        817       1552      0.791      0.802      0.853      0.692
+[fp32_onnx]                  truck       2203       3491      0.728      0.729      0.789      0.657
+[fp32_onnx]                pothole        353        802      0.722      0.521      0.603      0.306
+[fp32_onnx]          license_plate       1901       2062      0.937      0.864      0.935      0.771
+[fp32_onnx]                   auto        955       2286      0.834       0.88      0.916       0.72
+[fp32_onnx]      road_construction       1329       1329      0.758      0.618      0.739      0.417
+[fp32_onnx]         accident_scene        851        942      0.784      0.722      0.781       0.52
+[fp32_onnx]          fire_accident        602        602      0.711      0.874       0.83      0.622
+[fp32_onnx] Speed: 0.9ms preprocess, 35.5ms inference, 0.0ms loss, 1.4ms postprocess per image
+== val int8_minmax
+[int8_minmax]     raise FileNotFoundError(f"'{file}' does not exist")
+[int8_minmax] FileNotFoundError: 'nh5_v8_int8_minmax.onnx' does not exist
+== val int8_entropy
+[int8_entropy]                    all       8040      41605      0.765      0.761      0.804      0.586
+[int8_entropy]                 person       2889      11518      0.752      0.737      0.793      0.573
+[int8_entropy]                bicycle        342        572      0.662      0.734      0.723      0.493
+[int8_entropy]                    car       4726      13224      0.837      0.859      0.911      0.763
+[int8_entropy]             motorcycle       1153       3225      0.813      0.796      0.866      0.607
+[int8_entropy]                    bus        817       1552      0.794      0.797      0.852      0.683
+[int8_entropy]                  truck       2203       3491      0.708      0.743      0.784      0.646
+[int8_entropy]                pothole        353        802      0.681      0.512      0.586      0.296
+[int8_entropy]          license_plate       1901       2062      0.938      0.853      0.933      0.765
+[int8_entropy]                   auto        955       2286      0.822      0.883      0.911      0.708
+[int8_entropy]      road_construction       1329       1329      0.731      0.625      0.717      0.404
+[int8_entropy]         accident_scene        851        942      0.751      0.732      0.761      0.497
+[int8_entropy]          fire_accident        602        602      0.689      0.863      0.811      0.602
+[int8_entropy] Speed: 0.9ms preprocess, 24.3ms inference, 0.0ms loss, 1.1ms postprocess per image
+== val int8_percentile
+[int8_percentile]                    all       8040      41605      0.761      0.765      0.805      0.589
+[int8_percentile]                 person       2889      11518      0.742      0.746      0.794      0.578
+[int8_percentile]                bicycle        342        572      0.656      0.752      0.721      0.496
+[int8_percentile]                    car       4726      13224      0.838       0.86      0.911      0.767
+[int8_percentile]             motorcycle       1153       3225      0.806      0.794      0.864      0.607
+[int8_percentile]                    bus        817       1552       0.78      0.805       0.85      0.683
+[int8_percentile]                  truck       2203       3491      0.712       0.74      0.785      0.647
+[int8_percentile]                pothole        353        802      0.691      0.514       0.59        0.3
+[int8_percentile]          license_plate       1901       2062      0.938      0.851      0.935      0.766
+[int8_percentile]                   auto        955       2286      0.823      0.879      0.915      0.715
+[int8_percentile]      road_construction       1329       1329      0.719      0.634      0.716      0.406
+[int8_percentile]         accident_scene        851        942      0.767      0.725      0.772      0.502
+[int8_percentile]          fire_accident        602        602      0.665       0.88      0.804        0.6
+[int8_percentile] Speed: 1.0ms preprocess, 24.8ms inference, 0.0ms loss, 1.1ms postprocess per image
+BENCH nh5_v8_fp32.onnx                 threads= 4     53.1 ms    18.8 FPS
+BENCH nh5_v8_fp32.onnx                 threads=32     64.0 ms    15.6 FPS
+Traceback (most recent call last):
+  File "/home/nikhil/Downloads/NH5 Highway/runs/onnx/bench.py", line 6, in <module>
+    s = ort.InferenceSession(path, so, providers=["CPUExecutionProvider"])
+  File "/home/nikhil/.local/lib/python3.10/site-packages/onnxruntime/capi/onnxruntime_inference_collection.py", line 485, in __init__
+    self._create_inference_session(providers, provider_options, disabled_optimizers)
+  File "/home/nikhil/.local/lib/python3.10/site-packages/onnxruntime/capi/onnxruntime_inference_collection.py", line 573, in _create_inference_session
+    sess = C.InferenceSession(session_options, self._model_path, True, self._read_config_from_model)
+onnxruntime.capi.onnxruntime_pybind11_state.NoSuchFile: [ONNXRuntimeError] : 3 : NO_SUCHFILE : Load model from nh5_v8_int8_minmax.onnx failed:Load model nh5_v8_int8_minmax.onnx failed. File doesn't exist
+ALLDONE
+== quantize minmax (rerun)
+minmax: 600 calibration images, 24 decode nodes kept FP32
+saved /home/nikhil/Downloads/NH5 Highway/runs/onnx/nh5_v8_int8_minmax.onnx (3.7 MB) in 72s
+== val int8_minmax
+[int8_minmax]                    all       8040      41605      0.783      0.705      0.782      0.567
+[int8_minmax]                 person       2889      11518      0.792      0.684      0.782       0.56
+[int8_minmax]                bicycle        342        572       0.69      0.661      0.678      0.455
+[int8_minmax]                    car       4726      13224      0.861      0.822      0.903      0.751
+[int8_minmax]             motorcycle       1153       3225      0.848      0.739      0.852      0.592
+[int8_minmax]                    bus        817       1552      0.829      0.764      0.843       0.67
+[int8_minmax]                  truck       2203       3491      0.766      0.682      0.775      0.633
+[int8_minmax]                pothole        353        802      0.716      0.378      0.555       0.28
+[int8_minmax]          license_plate       1901       2062      0.962      0.822      0.929      0.757
+[int8_minmax]                   auto        955       2286      0.856      0.839      0.897       0.69
+[int8_minmax]      road_construction       1329       1329      0.771      0.576      0.709      0.392
+[int8_minmax]         accident_scene        851        942      0.791      0.669      0.746      0.482
+[int8_minmax]          fire_accident        602        602       0.52      0.824      0.716      0.544
+[int8_minmax] Speed: 1.0ms preprocess, 23.9ms inference, 0.0ms loss, 1.2ms postprocess per image
+BENCH nh5_v8_int8_minmax.onnx          threads= 4     26.5 ms    37.8 FPS
+BENCH nh5_v8_int8_minmax.onnx          threads=32     22.1 ms    45.3 FPS
+MINMAXDONE

@@ -1,0 +1,16 @@
+# VisionIQ Python backend. Install into the NH5 Highway venv (it also needs NH5's torch/ultralytics/paddleocr):
+#   "../NH5 Highway/.venv/bin/pip" install -r backend/requirements.txt
+# Plate reading on the GPU: this machine uses paddlepaddle-gpu 3.3.1 (cu130 build, installed with --no-deps so it
+# shares torch's CUDA 13 libraries) instead of the CPU paddlepaddle -- about 11x faster OCR per plate:
+#   "../NH5 Highway/.venv/bin/pip" uninstall -y paddlepaddle
+#   "../NH5 Highway/.venv/bin/pip" install --no-deps paddlepaddle-gpu==3.3.1 -i https://www.paddlepaddle.org.cn/packages/stable/cu130/
+flask>=3.1
+flask-socketio>=5.6
+pymysql>=1.1
+cryptography>=42
+pyjwt>=2.8
+bcrypt>=4.2
+python-dotenv>=1.0
+requests>=2.31
+openpyxl>=3.1
+gunicorn>=23

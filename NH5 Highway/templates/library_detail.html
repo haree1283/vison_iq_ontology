@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}{{ meta.original_filename }}{% endblock %}
+{% block page_title %}{{ meta.original_filename }}{% endblock %}
+{% block page_sub %}{{ meta.uploaded_at }}{% if meta.scene_name %} &middot; road map: {{ meta.scene_name }}{% endif %}{% endblock %}
+{% block content %}
+<div class="grid">
+  <div>
+    <div class="card">
+      {% if meta.has_video %}
+      <div class="stream-wrap"><video src="{{ url_for('media', job_id=job_id, fname='annotated.mp4') }}" controls {% if meta.has_thumb %}poster="{{ url_for('media', job_id=job_id, fname='thumb.jpg') }}"{% endif %}></video></div>
+      {% else %}
+      <div class="stream-wrap"><span class="stream-empty">No video available.</span></div>
+      {% endif %}
+      <div style="margin-top:14px">
+        <span class="status-badge status-{{ meta.status }}"><span class="dot"></span>{{ meta.status }}</span>
+        {% if meta.live_session %}<span class="lib-mode" style="position:static;display:inline-flex;margin-left:8px">Live</span>{% endif %}
+      </div>
+      {% if meta.error %}
+      <div class="alert alert-danger" style="margin-top:14px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>
+        {{ meta.error }}
+      </div>
+      {% endif %}
+
+      <div class="stat-row" style="margin-top:20px">
+        <div class="stat"><div class="stat-value">{{ meta.num_vehicles }}</div><div class="stat-label">Vehicles</div></div>
+        {% if meta.vehicle_types %}{% for k, label in [("car","Cars"),("motorcycle","Motorcycles"),("auto","Autos"),("bus","Buses"),("truck","Trucks"),("bicycle","Bicycles")] %}
+        <div class="stat"><div class="stat-value">{{ meta.vehicle_types.get(k, 0) }}</div><div class="stat-label">{{ label }}</div></div>
+        {% endfor %}
+        <div class="stat"><div class="stat-value">{{ meta.num_people or 0 }}</div><div class="stat-label">People</div></div>{% endif %}
+        <div class="stat"><div class="stat-value">{{ meta.plates | length }}</div><div class="stat-label">Plates read</div></div>
+        <div class="stat"><div class="stat-value">{{ meta.event_counts.values() | sum if meta.event_counts else 0 }}</div><div class="stat-label">Events</div></div>
+        <div class="stat"><div class="stat-value">{{ '%.1f' % meta.processing_fps if meta.processing_fps else '&mdash;' | safe }}</div><div class="stat-label">Proc. FPS</div></div>
+      </div>
+
+      {% if meta.model_name %}
+      <div class="divider"></div>
+      <h3>Model</h3>
+      <p class="card-hint">{{ meta.model_name }} &mdash; {{ meta.model_description }}</p>
+      {% endif %}
+
+      <div class="divider"></div>
+      {% if meta.has_report %}
+      <a class="btn" href="{{ url_for('report_view', job_id=job_id) }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+        View report
+      </a>
+      <a class="btn btn-ghost" href="{{ url_for('download', job_id=job_id, fname='report.xlsx') }}" style="margin-left:8px">Download .xlsx</a>
+      {% endif %}
+      {% if meta.has_video %}
+      <a class="btn btn-ghost" href="{{ url_for('download', job_id=job_id, fname='annotated.mp4') }}" style="margin-left:8px">Download video</a>
+      {% endif %}
+    </div>
+
+    <div class="card danger-zone">
+      <h3>Delete this session</h3>
+      <p class="card-hint">Removes the video, report and all snapshots. Cannot be undone.</p>
+      <form method="post" action="{{ url_for('library_delete', job_id=job_id) }}" onsubmit="return confirm('Delete this session? This cannot be undone.');" style="margin-top:12px">
+        <button class="btn" style="background:var(--danger)" type="submit">Delete</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Event rules for this run</h3>
+    <p class="card-hint">On/off is decided by the road map picked at upload, not a setting here.</p>
+    <ul class="event-list" style="max-height:none">
+      {% for etype, rule in (meta.event_rules or {}).items() %}
+      <li class="event-item {{ 'sev-info' if rule.enabled else '' }}">
+        <span class="status-badge {{ 'status-done' if rule.enabled else '' }}" style="{{ '' if rule.enabled else 'background:var(--surface-3);color:var(--text-faint)' }}">{{ 'on' if rule.enabled else 'off' }}</span>
+        <span>{{ event_types[etype].label if event_types is defined and etype in event_types else etype }}{% if not rule.enabled %} &mdash; {{ rule.reason }}{% endif %}</span>
+      </li>
+      {% else %}
+      <li class="empty-note">No road map was used &mdash; only class-based events (accident, construction) could run.</li>
+      {% endfor %}
+    </ul>
+    {% if meta.plates %}
+    <div class="divider"></div>
+    <h3>Plates read</h3>
+    <ul class="plates">
+      {% for p in meta.plates %}<li class="plate-chip"><span class="flag">IND</span>{{ p }}{% if meta.plate_counts and meta.plate_counts.get(p, 1) > 1 %} <strong>&times;{{ meta.plate_counts[p] }}</strong>{% endif %}</li>{% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

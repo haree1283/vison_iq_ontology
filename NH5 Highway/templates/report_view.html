@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Report{% endblock %}
+{% block page_title %}Report &middot; {{ meta.original_filename or job_id }}{% endblock %}
+{% block page_sub %}{{ vehicles | length }} vehicles &middot; {{ events | length }} events. <a href="{{ url_for('library_detail', job_id=job_id) }}">&larr; back to session</a>{% endblock %}
+{% block content %}
+<div class="card">
+  <h3>Vehicles</h3>
+  <div class="table-scroll">
+    <table class="report-table">
+      <thead><tr>
+        <th>ID</th><th>Timestamp</th><th>Type</th><th>Photo</th><th>Plate</th><th>Speed</th><th>Over limit</th><th>Events</th><th>Links</th>
+      </tr></thead>
+      <tbody>
+        {% for v in vehicles %}
+        <tr>
+          <td class="mono">{{ v.id }}</td>
+          <td>{{ v.timestamp }}</td>
+          <td>{{ v.vehicle_type }}</td>
+          <td>{% if v.vehicle_image_url %}<img class="report-thumb" src="{{ v.vehicle_image_url }}" alt="">{% endif %}</td>
+          <td>{{ v.plate_number }}{% if v.plate_confidence %} <span class="muted">({{ v.plate_confidence }}%)</span>{% endif %}</td>
+          <td>{{ v.speed_kmh }}</td>
+          <td>{{ v.over_speed }}</td>
+          <td>{{ v.events | join(', ') if v.events else 'none' }}</td>
+          <td class="report-links">
+            <a href="{{ v.video_url }}" target="_blank">clip</a>
+            {% if v.plate_image_url %} &middot; <a href="{{ v.plate_image_url }}" target="_blank">plate</a>{% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="9" class="empty-note">No vehicles tracked.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Events</h3>
+  <div class="table-scroll">
+    <table class="report-table">
+      <thead><tr>
+        <th>Time</th><th>Event</th><th>Severity</th><th>Object</th><th>Plate</th><th>Details</th><th>Links</th>
+      </tr></thead>
+      <tbody>
+        {% for ev in events %}
+        <tr>
+          <td class="mono">{{ '%.1f' % ev.time_s }}s</td>
+          <td>{{ ev.label }}</td>
+          <td><span class="status-badge sev-badge status-{{ 'error' if ev.severity == 'critical' else ev.severity }}">{{ ev.severity }}</span></td>
+          <td>{{ ev.object_class or '' }}{% if ev.track_id is not none %} #{{ ev.track_id }}{% endif %}</td>
+          <td>{{ ev.plate_number }}</td>
+          <td>{{ ev.details.items() | map('join', ': ') | join(', ') if ev.details else '' }}</td>
+          <td class="report-links">
+            {% if ev.snapshot_url %}<a href="{{ ev.snapshot_url }}" target="_blank">snapshot</a> &middot; {% endif %}
+            <a href="{{ ev.clip_url }}" target="_blank">clip</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="empty-note">No events fired.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,74 @@
+== 1/3 detection inference: tracking + per-class conf + temporal accident/fire alerts ==
+AQNmKG0HFQMCpLhf6Dq_8Sznte446sZFbqoNjLeHVEKpnIv-m2VveyZXRttmJ6gJIORoUmn-CBEYMKOL7MlxAQtWviW98z6GYJlY1XNwkw.mp4 {'frames': 866, 'raw_event_frames': {'accident_scene': 31, 'fire_accident': 0}, 'alert_frames': {'accident_scene': 13, 'fire_accident': 0}, 'objects_drawn': {'car': 1366, 'auto': 79, 'motorcycle': 38, 'license_plate': 347, 'accident_scene': 1, 'truck': 119, 'bus': 7, 'bicycle': 1}, 'accident_involved_frames': {'car': 13}, 'stability': {'tracks': 104, 'mean_track_len': 18.5, 'short_tracks_pct': 40.4, 'count_jitter_pct': 11.7}}
+Create_a_highly_realistic_s.mp4 {'frames': 240, 'raw_event_frames': {'accident_scene': 0, 'fire_accident': 0}, 'alert_frames': {'accident_scene': 0, 'fire_accident': 0}, 'objects_drawn': {'car': 1699, 'motorcycle': 729, 'bus': 252, 'person': 352, 'license_plate': 234, 'auto': 68, 'bicycle': 1, 'truck': 111}, 'accident_involved_frames': {}, 'stability': {'tracks': 114, 'mean_track_len': 30.2, 'short_tracks_pct': 31.6, 'count_jitter_pct': 6.1}}
+License Plate Detection Test - Dev Drone Bhowmik (1080p, h264).mp4 {'frames': 1800, 'raw_event_frames': {'accident_scene': 0, 'fire_accident': 0}, 'alert_frames': {'accident_scene': 0, 'fire_accident': 0}, 'objects_drawn': {'car': 32986, 'bus': 1431, 'truck': 2053, 'license_plate': 1174, 'motorcycle': 28}, 'accident_involved_frames': {}, 'stability': {'tracks': 317, 'mean_track_len': 118.8, 'short_tracks_pct': 29.7, 'count_jitter_pct': 2.7}}
+MicrosoftTeams-video (1).mp4 {'frames': 888, 'raw_event_frames': {'accident_scene': 247, 'fire_accident': 0}, 'alert_frames': {'accident_scene': 289, 'fire_accident': 0}, 'objects_drawn': {'motorcycle': 7736, 'car': 8765, 'auto': 893, 'license_plate': 242, 'bus': 753, 'truck': 132, 'person': 372, 'accident_scene': 203}, 'accident_involved_frames': {'bus': 3, 'car': 96, 'truck': 41, 'motorcycle': 124, 'person': 20}, 'stability': {'tracks': 252, 'mean_track_len': 75.0, 'short_tracks_pct': 40.1, 'count_jitter_pct': 3.6}}
+MicrosoftTeams-video (2).mp4 {'frames': 545, 'raw_event_frames': {'accident_scene': 0, 'fire_accident': 0}, 'alert_frames': {'accident_scene': 0, 'fire_accident': 0}, 'objects_drawn': {'car': 4277, 'person': 1613, 'auto': 1137, 'motorcycle': 2317, 'bus': 211, 'truck': 193, 'bicycle': 6}, 'accident_involved_frames': {}, 'stability': {'tracks': 166, 'mean_track_len': 58.8, 'short_tracks_pct': 27.1, 'count_jitter_pct': 5.2}}
+MicrosoftTeams-video.mp4 {'frames': 287, 'raw_event_frames': {'fire_accident': 0, 'accident_scene': 2}, 'alert_frames': {'fire_accident': 0, 'accident_scene': 0}, 'objects_drawn': {'person': 970, 'motorcycle': 223, 'pothole': 7, 'car': 4}, 'accident_involved_frames': {}, 'stability': {'tracks': 32, 'mean_track_len': 37.5, 'short_tracks_pct': 46.9, 'count_jitter_pct': 6.6}}
+real_accident_cctv_test.mp4 {'frames': 2298, 'raw_event_frames': {'fire_accident': 23, 'accident_scene': 880}, 'alert_frames': {'fire_accident': 21, 'accident_scene': 937}, 'objects_drawn': {'person': 1982, 'car': 12702, 'motorcycle': 6, 'accident_scene': 999, 'license_plate': 273, 'truck': 1052, 'bus': 454, 'fire_accident': 9}, 'accident_involved_frames': {'car': 1755, 'truck': 19, 'person': 85}, 'stability': {'tracks': 214, 'mean_track_len': 76.9, 'short_tracks_pct': 28.0, 'count_jitter_pct': 3.5}}
+reference_vedio.mp4 {'frames': 1949, 'raw_event_frames': {'accident_scene': 0, 'fire_accident': 0}, 'alert_frames': {'accident_scene': 0, 'fire_accident': 0}, 'objects_drawn': {'person': 8081, 'auto': 902, 'motorcycle': 5277, 'car': 3019, 'truck': 112, 'bus': 310}, 'accident_involved_frames': {}, 'stability': {'tracks': 437, 'mean_track_len': 40.5, 'short_tracks_pct': 33.2, 'count_jitter_pct': 7.1}}
+VID20260824132342.mp4 {'frames': 1844, 'raw_event_frames': {'accident_scene': 0, 'fire_accident': 0}, 'alert_frames': {'accident_scene': 0, 'fire_accident': 0}, 'objects_drawn': {'car': 7485, 'auto': 1709, 'motorcycle': 2098, 'truck': 567, 'license_plate': 333, 'person': 455, 'bicycle': 67, 'bus': 63, 'road_construction': 42, 'pothole': 131}, 'accident_involved_frames': {}, 'stability': {'tracks': 340, 'mean_track_len': 38.1, 'short_tracks_pct': 24.4, 'count_jitter_pct': 6.6}}
+VID20260824132956.mp4 {'frames': 2110, 'raw_event_frames': {'fire_accident': 0, 'accident_scene': 0}, 'alert_frames': {'fire_accident': 0, 'accident_scene': 0}, 'objects_drawn': {'car': 3995, 'person': 3318, 'motorcycle': 4306, 'bicycle': 111, 'truck': 609, 'pothole': 539, 'auto': 1526, 'bus': 174, 'license_plate': 104}, 'accident_involved_frames': {}, 'stability': {'tracks': 419, 'mean_track_len': 35.0, 'short_tracks_pct': 28.9, 'count_jitter_pct': 7.4}}
+VID20260824133121.mp4 {'frames': 866, 'raw_event_frames': {'fire_accident': 0, 'accident_scene': 0}, 'alert_frames': {'fire_accident': 0, 'accident_scene': 0}, 'objects_drawn': {'car': 4548, 'bus': 128, 'auto': 2457, 'person': 3333, 'motorcycle': 5342, 'truck': 712, 'bicycle': 265}, 'accident_involved_frames': {}, 'stability': {'tracks': 287, 'mean_track_len': 58.5, 'short_tracks_pct': 33.8, 'count_jitter_pct': 4.2}}
+videoplayback (4).mp4 {'frames': 304, 'raw_event_frames': {'fire_accident': 198, 'accident_scene': 2}, 'alert_frames': {'fire_accident': 218, 'accident_scene': 0}, 'objects_drawn': {'car': 586, 'fire_accident': 182, 'truck': 17, 'person': 6}, 'accident_involved_frames': {}, 'stability': {'tracks': 25, 'mean_track_len': 24.1, 'short_tracks_pct': 24.0, 'count_jitter_pct': 10.5}}
+WhatsApp Video 2026-09-21 at 12.25.40.mp4 {'frames': 304, 'raw_event_frames': {'accident_scene': 0, 'fire_accident': 129}, 'alert_frames': {'accident_scene': 0, 'fire_accident': 177}, 'objects_drawn': {'car': 321, 'bus': 7, 'fire_accident': 103, 'truck': 23, 'road_construction': 1, 'person': 2}, 'accident_involved_frames': {}, 'stability': {'tracks': 24, 'mean_track_len': 14.5, 'short_tracks_pct': 50.0, 'count_jitter_pct': 21.3}}
+WhatsApp Video 2026-09-21 at 12.26.27.mp4 {'frames': 1916, 'raw_event_frames': {'fire_accident': 0, 'accident_scene': 0}, 'alert_frames': {'fire_accident': 0, 'accident_scene': 0}, 'objects_drawn': {'car': 4502, 'truck': 1483, 'license_plate': 42, 'bus': 13, 'person': 138, 'motorcycle': 367, 'auto': 5}, 'accident_involved_frames': {}, 'stability': {'tracks': 91, 'mean_track_len': 71.9, 'short_tracks_pct': 48.4, 'count_jitter_pct': 5.2}}
+== 2/3 plate crops saved + PaddleOCR on the saved crops ==
+[stage1] AQNmKG0HFQMCpLhf6Dq_8Sznte446sZFbqoNjLeHVEKpnIv-m2VveyZXRttm: 128 crops, 19 tracks
+[stage2] AQNmKG0HFQMCpLhf6Dq_8Sznte446sZFbqoNjLeHVEKpnIv-m2VveyZXRttm: OCR'd 128 crops -> runs/video_tests/v8_ep60/plates/AQNmKG0HFQMCpLhf6Dq_8Sznte446sZFbqoNjLeHVEKpnIv-m2VveyZXRttm/raw/plates_ocr.txt
+[stage1] Create_a_highly_realistic_s: 86 crops, 14 tracks
+[stage2] Create_a_highly_realistic_s: OCR'd 86 crops -> runs/video_tests/v8_ep60/plates/Create_a_highly_realistic_s/raw/plates_ocr.txt
+[stage1] License_Plate_Detection_Test_-_Dev_Drone_Bhowmik_1080p_h264_: 278 crops, 33 tracks
+[stage2] License_Plate_Detection_Test_-_Dev_Drone_Bhowmik_1080p_h264_: OCR'd 278 crops -> runs/video_tests/v8_ep60/plates/License_Plate_Detection_Test_-_Dev_Drone_Bhowmik_1080p_h264_/raw/plates_ocr.txt
+[stage1] MicrosoftTeams-video_1_: 95 crops, 27 tracks
+[stage2] MicrosoftTeams-video_1_: OCR'd 95 crops -> runs/video_tests/v8_ep60/plates/MicrosoftTeams-video_1_/raw/plates_ocr.txt
+[stage1] MicrosoftTeams-video_2_: 14 crops, 14 tracks
+[stage2] MicrosoftTeams-video_2_: OCR'd 14 crops -> runs/video_tests/v8_ep60/plates/MicrosoftTeams-video_2_/raw/plates_ocr.txt
+[stage1] MicrosoftTeams-video: 0 crops, 0 tracks
+[stage2] MicrosoftTeams-video: OCR'd 0 crops -> runs/video_tests/v8_ep60/plates/MicrosoftTeams-video/raw/plates_ocr.txt
+[stage1] real_accident_cctv_test: 56 crops, 6 tracks
+[stage2] real_accident_cctv_test: OCR'd 56 crops -> runs/video_tests/v8_ep60/plates/real_accident_cctv_test/raw/plates_ocr.txt
+[stage1] reference_vedio: 0 crops, 0 tracks
+[stage2] reference_vedio: OCR'd 0 crops -> runs/video_tests/v8_ep60/plates/reference_vedio/raw/plates_ocr.txt
+[stage1] VID20260824132342: 101 crops, 29 tracks
+[stage2] VID20260824132342: OCR'd 101 crops -> runs/video_tests/v8_ep60/plates/VID20260824132342/raw/plates_ocr.txt
+[stage1] VID20260824132956: 100 crops, 99 tracks
+[stage2] VID20260824132956: OCR'd 100 crops -> runs/video_tests/v8_ep60/plates/VID20260824132956/raw/plates_ocr.txt
+[stage1] VID20260824133121: 22 crops, 15 tracks
+[stage2] VID20260824133121: OCR'd 22 crops -> runs/video_tests/v8_ep60/plates/VID20260824133121/raw/plates_ocr.txt
+[stage1] videoplayback_4_: 0 crops, 0 tracks
+[stage2] videoplayback_4_: OCR'd 0 crops -> runs/video_tests/v8_ep60/plates/videoplayback_4_/raw/plates_ocr.txt
+[stage1] WhatsApp_Video_2026-09-21_at_12.25.40: 0 crops, 0 tracks
+[stage2] WhatsApp_Video_2026-09-21_at_12.25.40: OCR'd 0 crops -> runs/video_tests/v8_ep60/plates/WhatsApp_Video_2026-09-21_at_12.25.40/raw/plates_ocr.txt
+[stage1] WhatsApp_Video_2026-09-21_at_12.26.27: 17 crops, 10 tracks
+[stage2] WhatsApp_Video_2026-09-21_at_12.26.27: OCR'd 17 crops -> runs/video_tests/v8_ep60/plates/WhatsApp_Video_2026-09-21_at_12.26.27/raw/plates_ocr.txt
+== 3/3 refined plate reading (best crops, format-aware correction, track voting) ==
+AQNmKG0HFQMCpLhf6Dq_8Sznte446sZFbqoNjLeHVEKpn raw_tracks= 19 unique_plates=  9 valid=  2
+Create_a_highly_realistic_s                   raw_tracks= 14 unique_plates=  9 valid=  1
+License_Plate_Detection_Test_-_Dev_Drone_Bhow raw_tracks= 33 unique_plates= 19 valid= 15
+MicrosoftTeams-video                          raw_tracks=  0 unique_plates=  0 valid=  0
+MicrosoftTeams-video_1_                       raw_tracks= 27 unique_plates=  9 valid=  0
+MicrosoftTeams-video_2_                       raw_tracks= 14 unique_plates=  2 valid=  0
+VID20260824132342                             raw_tracks= 29 unique_plates= 11 valid=  5
+VID20260824132956                             raw_tracks= 99 unique_plates= 24 valid=  0
+VID20260824133121                             raw_tracks= 15 unique_plates= 15 valid=  9
+WhatsApp_Video_2026-09-21_at_12.25.40         raw_tracks=  0 unique_plates=  0 valid=  0
+WhatsApp_Video_2026-09-21_at_12.26.27         raw_tracks= 10 unique_plates=  5 valid=  2
+real_accident_cctv_test                       raw_tracks=  6 unique_plates=  4 valid=  0
+reference_vedio                               raw_tracks=  0 unique_plates=  0 valid=  0
+videoplayback_4_                              raw_tracks=  0 unique_plates=  0 valid=  0
+results in runs/video_tests/v8_ep60 (annotated/, plates/<video>/crops, plates_ocr.txt, plates_final.txt, all_plates_final.txt)
+| v8_ep50 | 304 | 617 | 5 | 0 | 0 | 237 | 0 | 25.0 | 13.5 | 25.8 |
+| v8_ep60 | 304 | 603 | 6 | 0 | 0 | 218 | 0 | 24.0 | 10.5 | 24.1 |
+
+## Totals
+
+| run | vehicles | plates | accident frames | fire frames | mean flicker % | mean jitter % |
+|---|---|---|---|---|---|---|
+| base_v5 | 104630 | 10 | 0 | 0 | 29.8 | 12.1 |
+| base_v6 | 43023 | 31 | 1514 | 0 | 44.4 | 24.0 |
+| v8_ep100 | 133439 | 31 | 1161 | 438 | 35.8 | 8.3 |
+| v8_ep30 | 138023 | 41 | 1039 | 347 | 33.8 | 7.5 |
+| v8_ep40 | 136392 | 44 | 1036 | 413 | 33.8 | 7.3 |
+| v8_ep50 | 135632 | 36 | 1251 | 408 | 33.7 | 7.4 |
+| v8_ep60 | 134935 | 34 | 1239 | 416 | 34.7 | 7.3 |

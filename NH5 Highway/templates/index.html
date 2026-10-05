@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Upload{% endblock %}
+{% block page_title %}Upload a video{% endblock %}
+{% block page_sub %}Run the NH5 detector + tracker + event rules + plate OCR on a video, then view or download the annotated result.{% endblock %}
+{% block content %}
+<div class="grid">
+  <div class="card">
+    <form method="post" action="{{ url_for('upload') }}" enctype="multipart/form-data" id="upload-form">
+      <label class="dropzone" id="dropzone">
+        <span class="dropzone-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5M5 21h14"/></svg>
+        </span>
+        <div class="dropzone-title">Drop a video or image here, or click to choose</div>
+        <div class="dropzone-sub">MP4, AVI, MOV, MKV, JPG, JPEG, PNG or BMP &middot; up to 2GB</div>
+        <div class="dropzone-filename" id="dropzone-filename"></div>
+        <input type="file" name="video" id="video-input" accept=".mp4,.avi,.mov,.mkv,.jpg,.jpeg,.png,.bmp" required>
+      </label>
+
+      <div class="field-block">
+        <div class="field-row">
+          <label class="field">Road map (camera)
+            <select name="scene_id">
+              <option value="">None &mdash; zone/lane events off</option>
+              {% for s in scenes %}
+              <option value="{{ s.id }}">{{ s.name }}</option>
+              {% endfor %}
+            </select>
+          </label>
+        </div>
+        <div class="field-row" style="margin-top:12px">
+          <label class="field">Latitude<input type="text" name="latitude" placeholder="e.g. 16.5062"></label>
+          <label class="field">Longitude<input type="text" name="longitude" placeholder="e.g. 80.6480"></label>
+        </div>
+        <div class="field-row" style="margin-top:12px">
+          <label class="field">Meters per pixel<input type="text" name="meters_per_pixel" placeholder="for speed"></label>
+          <label class="field">Speed limit (km/h)<input type="text" name="speed_limit" placeholder="e.g. 80"></label>
+        </div>
+      </div>
+
+      <label class="toggle-row">
+        <input type="checkbox" name="thorough">
+        <span class="toggle-switch"></span>
+        <span><strong>Thorough scan</strong> &mdash; run plate OCR on every frame instead of sampling (slower, more plate reads).</span>
+      </label>
+
+      <button class="btn btn-block" type="submit" style="margin-top:18px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 3 14 9-14 9V3Z"/></svg>
+        Process video
+      </button>
+      <div id="upload-progress" style="display:none; margin-top:14px">
+        <div class="progress-track"><div class="progress-fill" id="up-fill" style="width:0%"></div></div>
+        <div class="progress-label"><span id="up-text">Uploading&hellip;</span><span id="up-speed"></span></div>
+      </div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h3>What this checks</h3>
+    <p class="card-hint">One pass: detection, tracking, plate OCR and rule-based events.</p>
+    <ul class="feature-list">
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Vehicles, people, potholes, plates</li>
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Speed estimate (needs meters-per-pixel)</li>
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Jaywalking, lane change, wrong-side driving (needs a road map)</li>
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Excel report + annotated video, all downloadable</li>
+    </ul>
+    <div class="divider"></div>
+    <p class="card-hint">No road map selected? Class-based events (accidents, construction) still run &mdash; lane/zone rules need a <a href="{{ url_for('scenes') }}">road map</a> for this camera.</p>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  // upload with a live progress bar (percent, MB sent, MB/s) instead of a frozen page, then open the result page
+  document.getElementById('upload-form').addEventListener('submit', e => {
+    const form = e.target, file = form.querySelector('input[type=file]').files[0];
+    if (!file) return;
+    e.preventDefault();
+    const box = document.getElementById('upload-progress'), fill = document.getElementById('up-fill'),
+          text = document.getElementById('up-text'), speed = document.getElementById('up-speed');
+    box.style.display = 'block'; form.querySelector('button[type=submit]').disabled = true;
+    const xhr = new XMLHttpRequest(), t0 = performance.now(), MB = 1024 * 1024;
+    xhr.upload.onprogress = ev => {
+      if (!ev.lengthComputable) return;
+      const pct = 100 * ev.loaded / ev.total, secs = (performance.now() - t0) / 1000;
+      fill.style.width = pct.toFixed(1) + '%';
+      text.textContent = `Uploading ${pct.toFixed(0)}% (${(ev.loaded / MB).toFixed(1)} / ${(ev.total / MB).toFixed(1)} MB)`;
+      if (secs > 0.3) speed.textContent = `${(ev.loaded / MB / secs).toFixed(1)} MB/s`;
+    };
+    xhr.upload.onload = () => { text.textContent = 'Upload complete, starting processing...'; };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 400) { window.location = xhr.responseURL; }
+      else { text.textContent = 'Upload failed: ' + (xhr.responseText || xhr.status); form.querySelector('button[type=submit]').disabled = false; }
+    };
+    xhr.onerror = () => { text.textContent = 'Upload failed (network error)'; form.querySelector('button[type=submit]').disabled = false; };
+    xhr.open('POST', form.action); xhr.send(new FormData(form));
+  });
+
+  const dz = document.getElementById('dropzone'), input = document.getElementById('video-input'),
+        nameEl = document.getElementById('dropzone-filename');
+  input.addEventListener('change', () => { nameEl.textContent = input.files[0] ? input.files[0].name : ''; });
+  ['dragover', 'dragleave', 'drop'].forEach(evt => dz.addEventListener(evt, e => {
+    e.preventDefault();
+    dz.classList.toggle('dragover', evt === 'dragover');
+    if (evt === 'drop' && e.dataTransfer.files.length) {
+      input.files = e.dataTransfer.files;
+      nameEl.textContent = input.files[0].name;
+    }
+  }));
+</script>
+{% endblock %}

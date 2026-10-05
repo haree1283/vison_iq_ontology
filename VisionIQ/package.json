@@ -1,0 +1,25 @@
+{
+  "name": "vision-iq-platform-a",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "latest",
+    "cytoscape": "^3.34.3",
+    "jszip": "^3.10.2",
+    "lucide-react": "^1.44.0",
+    "papaparse": "^5.7.0",
+    "react": "latest",
+    "react-dom": "latest",
+    "react-router-dom": "^7.18.3",
+    "recharts": "^3.10.1",
+    "socket.io-client": "^4.8.3",
+    "vite": "latest",
+    "xlsx": "^0.18.5"
+  }
+}

@@ -1,0 +1,113 @@
+"""Refine plate reading on saved crops: per-track best-crop selection, CLAHE/sharpen variants, format-aware character
+correction (Indian + UK plates), weighted per-character voting. Reads runs/plates/*/crops, writes plates_final.txt. Test-only."""
+import os, re, glob, shutil, collections, cv2, numpy as np
+from paddleocr import PaddleOCR
+
+ROOT = os.environ.get("PLATES_ROOT", "runs/plates"); TOPK = 5
+STATES = set("AN AP AR AS BR CH CG DD DL DN GA GJ HP HR JH JK KA KL LA LD MH ML MN MP MZ NL OD OR PB PY RJ SK TN TR TS UK UP WB".split())
+TO_LET = {"0": "O", "1": "I", "5": "S", "8": "B", "2": "Z", "6": "G", "4": "A", "7": "T"}
+TO_DIG = {"O": "0", "Q": "0", "D": "0", "I": "1", "L": "1", "S": "5", "B": "8", "Z": "2", "G": "6", "A": "4", "T": "7"}
+ocr = PaddleOCR(use_doc_orientation_classify=False, use_doc_unwarping=False, use_textline_orientation=False, lang="en", enable_mkldnn=False)
+clean = lambda s: re.sub(r"[^A-Z0-9]", "", s.upper())
+IND = re.compile(r"^[A-Z]{2}\d{1,2}[A-Z]{1,3}\d{4}$"); UK = re.compile(r"^[A-Z]{2}\d{2}[A-Z]{3}$")
+
+def fix_indian(t):
+    best = None
+    for dd in (2, 1):
+        sl = len(t) - 2 - dd - 4
+        if sl < 1 or sl > 3: continue
+        tmpl = "L" * 2 + "D" * dd + "L" * sl + "D" * 4; out = []; subs = 0
+        for ch, k in zip(t, tmpl):
+            if k == "L" and ch.isdigit(): ch2 = TO_LET.get(ch, ch); subs += 1
+            elif k == "D" and ch.isalpha(): ch2 = TO_DIG.get(ch, ch); subs += 1
+            else: ch2 = ch
+            out.append(ch2)
+        c = "".join(out)
+        if IND.match(c) and (best is None or subs < best[1]): best = (c, subs)
+    return best
+
+def normalize(raw):
+    t = clean(raw)
+    if len(t) == 7 and UK.match(t): return t, "UK"
+    for cand in (t, t[1:], t[:-1]) if len(t) >= 10 else (t,):  # tolerate one stray edge char
+        r = fix_indian(cand) if 9 <= len(cand) <= 11 else None
+        if r and cand[:2] and r[0][:2] in STATES: return r[0], "IN"
+    return t, ""
+
+def quality(img):
+    g = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if img.ndim == 3 else img
+    return cv2.Laplacian(g, cv2.CV_64F).var() * np.sqrt(g.shape[0] * g.shape[1])
+
+def variants(img):
+    h = img.shape[0]; s = max(1.0, 112 / max(h, 1))
+    a = cv2.resize(img, None, fx=s, fy=s, interpolation=cv2.INTER_CUBIC) if s > 1 else img
+    g = cv2.cvtColor(a, cv2.COLOR_BGR2GRAY); g = cv2.createCLAHE(2.5, (4, 4)).apply(g)
+    bl = cv2.GaussianBlur(g, (0, 0), 1.2); sh = cv2.addWeighted(g, 1.8, bl, -0.8, 0)
+    return [a, cv2.cvtColor(sh, cv2.COLOR_GRAY2BGR)]
+
+def read(img):
+    try: res = ocr.predict(img)
+    except Exception: return "", 0.0
+    t, c = [], []
+    for r in res: t += list(r.get("rec_texts", [])); c += list(r.get("rec_scores", []))
+    return ("".join(t), float(np.mean(c))) if t else ("", 0.0)
+
+summary = []
+for vdir in sorted(glob.glob(f"{ROOT}/*/")):
+    name = os.path.basename(vdir.rstrip("/")); tracks = collections.defaultdict(list); RAW = f"{vdir}raw"
+    if os.path.isdir(f"{vdir}crops") and not os.path.isdir(f"{RAW}/crops"):  # migrate old layout
+        os.makedirs(RAW, exist_ok=True)
+        for item in ("crops", "plates_ocr.txt", "plates_per_track.txt", "plates_final.txt"):
+            if os.path.exists(f"{vdir}{item}"): shutil.move(f"{vdir}{item}", f"{RAW}/{item}")
+    for f in glob.glob(f"{RAW}/crops/*.png"):
+        tracks[os.path.basename(f).split("_")[0]].append(f)
+    rows = []
+    for tid, files in sorted(tracks.items()):
+        scored = sorted(((quality(cv2.imread(f)), f) for f in files), reverse=True)[:TOPK]
+        votes = collections.defaultdict(float); raws = []; reads = []
+        qmax = max(q for q, _ in scored) + 1e-9
+        for q, f in scored:
+            for v in variants(cv2.imread(f)):
+                txt, sc = read(v); norm, fmt = normalize(txt); raws.append(norm); reads.append((norm, fmt, sc, f))
+                if fmt: votes[(norm, fmt)] += sc * (0.5 + 0.5 * q / qmax)
+        if votes:
+            # per-character vote among same-length valid reads (weighted), fall back to best whole text
+            (best, fmt), w = max(votes.items(), key=lambda kv: kv[1])
+            same = [(t, wt) for (t, fm), wt in votes.items() if fm == fmt and len(t) == len(best)]
+            if len(same) > 1:
+                cols = [collections.Counter() for _ in best]
+                for t, wt in same:
+                    for i, ch in enumerate(t): cols[i][ch] += wt
+                cand = "".join(c.most_common(1)[0][0] for c in cols)
+                if (IND if fmt == "IN" else UK).match(cand): best = cand
+            pool = [r for r in reads if r[0] == best] or [r for r in reads if r[1] == fmt]
+            top = max(pool, key=lambda r: r[2])
+            rows.append((tid, best, fmt, len(scored), round(w, 2), round(top[2], 3), top[3]))
+        else:
+            pool = [r for r in reads if len(r[0]) >= 6]
+            if pool:
+                top = max(pool, key=lambda r: r[2]); rows.append((tid, top[0], "", len(scored), 0.0, round(top[2], 3), top[3]))
+            else: rows.append((tid, "", "", len(scored), 0.0, 0.0, ""))
+    with open(f"{RAW}/plates_final.txt", "w") as fh:
+        fh.write("# track\tfinal_text\tformat\tcrops_used\tvote_weight\tbest_conf\tbest_crop\n")
+        for r in rows: fh.write("\t".join(map(str, r)) + "\n")
+    # ---- de-duplicate: one entry per plate; same/near-same text (<=1 char apart, same length) merges, highest confidence wins
+    cands = sorted([r for r in rows if r[1] and len(r[1]) >= 6], key=lambda r: (bool(r[2]), r[5], r[4]), reverse=True)
+    kept = []
+    for r in cands:
+        for k in kept:
+            if len(k["text"]) == len(r[1]) and sum(a != b for a, b in zip(k["text"], r[1])) <= 1:
+                k["seen"] += 1; break
+        else:
+            kept.append(dict(text=r[1], conf=r[5], fmt=r[2], seen=1, crop=r[6]))
+    ud = f"{vdir}unique"; shutil.rmtree(ud, ignore_errors=True); os.makedirs(ud)
+    with open(f"{vdir}plates_unique.txt", "w") as fh:
+        fh.write("# plate_text\tocr_conf\tstatus\tseen_in_tracks\tcrop_image\n")
+        for k in kept:
+            cf = f"{k['text']}_conf{k['conf']:.2f}.png"; shutil.copy(k["crop"], f"{ud}/{cf}")
+            fh.write(f"{k['text']}\t{k['conf']:.3f}\t{'VALID' if k['fmt'] else 'UNVERIFIED'}\t{k['seen']}\tunique/{cf}\n")
+            summary.append((name, k["text"], k["conf"], "VALID" if k["fmt"] else "UNVERIFIED", k["seen"], f"{name}/unique/{cf}"))
+    print(f"{name[:45]:45s} raw_tracks={len(rows):3d} unique_plates={len(kept):3d} valid={sum(1 for k in kept if k['fmt']):3d}", flush=True)
+with open(f"{ROOT}/all_plates_unique.txt", "w") as fh:
+    fh.write("# video\tplate_text\tocr_conf\tstatus\tseen_in_tracks\tcrop_image\n")
+    for r in summary: fh.write("\t".join(map(str, r)) + "\n")

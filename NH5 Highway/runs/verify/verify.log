@@ -1,0 +1,31 @@
+2026-09-25 19:08:40 START v8_ep30 (/home/nikhil/Downloads/NH5 Highway/runs/verify/ep30_best.pt)
+2026-09-25 19:12:06 GUARD stopped verification: 13G free, pressure 27%
+2026-09-25 22:03:55 snapshot ep40 best.pt saved
+2026-09-26 00:58:05 snapshot ep50 best.pt saved
+2026-09-26 03:54:05 snapshot ep60 best.pt saved
+2026-09-26 06:50:05 snapshot ep70 best.pt saved
+2026-09-26 10:00:05 snapshot ep80 best.pt saved
+2026-09-26 12:40:05 snapshot ep90 best.pt saved
+2026-09-26 15:20:24 FINAL: val best.pt
+2026-09-26 15:20:25 START v8_ep100 (runs/verify/final_best.pt)
+2026-09-26 15:28:55 DONE v8_ep100 rc=0
+2026-09-26 15:28:55 START base_v6 (runs/detect/runs/nh5_v6/processed_v2_plus_v6_100ep-2/weights/best.pt)
+2026-09-26 15:36:58 DONE base_v6 rc=0
+2026-09-26 15:36:58 START base_v5 (models/nh5_v5_best.pt)
+2026-09-26 15:42:30 DONE base_v5 rc=0
+2026-09-26 15:42:30 START v8_ep30 (/home/nikhil/Downloads/NH5)
+2026-09-26 15:42:47 START v8_ep30 (/home/nikhil/Downloads/NH5 Highway/runs/verify/ep30_best.pt)
+2026-09-26 15:52:49 DONE v8_ep30 rc=0
+2026-09-26 15:52:49 START v8_ep40 (/home/nikhil/Downloads/NH5 Highway/runs/verify/ep40_best.pt)
+2026-09-26 16:02:02 DONE v8_ep40 rc=0
+2026-09-26 16:02:02 START v8_ep50 (/home/nikhil/Downloads/NH5 Highway/runs/verify/ep50_best.pt)
+2026-09-26 16:11:25 DONE v8_ep50 rc=0
+2026-09-26 16:11:25 START v8_ep60 (/home/nikhil/Downloads/NH5 Highway/runs/verify/ep60_best.pt)
+2026-09-26 16:20:02 DONE v8_ep60 rc=0
+2026-09-26 16:20:02 START v8_ep70 (/home/nikhil/Downloads/NH5 Highway/runs/verify/ep70_best.pt)
+2026-09-26 16:28:29 DONE v8_ep70 rc=0
+2026-09-26 16:28:29 START v8_ep80 (/home/nikhil/Downloads/NH5 Highway/runs/verify/ep80_best.pt)
+2026-09-26 16:37:04 DONE v8_ep80 rc=0
+2026-09-26 16:37:04 START v8_ep90 (/home/nikhil/Downloads/NH5 Highway/runs/verify/ep90_best.pt)
+2026-09-26 16:45:06 DONE v8_ep90 rc=0
+2026-09-26 16:45:06 FINAL COMPLETE -> runs/verify/report.md, runs/verify/final_val.log

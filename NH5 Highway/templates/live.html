@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+{% block title %}Live camera{% endblock %}
+{% block page_title %}Live camera{% endblock %}
+{% block page_sub %}Runs the same detection + event pipeline on YOUR browser's camera in real time -- nothing is captured on the server.{% endblock %}
+{% block content %}
+<div class="grid">
+  <div>
+    <div class="card">
+      <div class="stream-wrap" id="stream-wrap">
+        <video id="local-video" autoplay muted playsinline style="display:none"></video>
+        <canvas id="overlay" style="position:absolute;inset:0;width:100%;height:100%;display:none"></canvas>
+        <span class="stream-empty" id="stream-empty">{% if running %}Reconnecting requires the tab that started this session -- stats below are still live.{% else %}Camera is not running.{% endif %}</span>
+        <span class="live-badge stream-overlay" id="live-badge" style="display:none"><span class="dot"></span>LIVE</span>
+      </div>
+
+      <div style="margin-top:14px">
+        <span class="status-badge status-{{ status }}" id="status-badge"><span class="dot"></span><span id="status-text">{{ status }}</span></span>
+      </div>
+      <div class="alert alert-danger" style="margin-top:14px;{{ '' if error else 'display:none' }}" id="error-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>
+        <span id="error-text">{{ error or '' }}</span>
+      </div>
+
+      <div class="speed-row" style="grid-template-columns: repeat(3, 1fr)">
+        <div class="stat"><div class="stat-value" id="sp-frames">0</div><div class="stat-label">Frames processed</div></div>
+        <div class="stat"><div class="stat-value" id="sp-fps">&ndash;</div><div class="stat-label">Frames / second</div></div>
+        <div class="stat"><div class="stat-value" id="sp-ms">&ndash;</div><div class="stat-label">Time per frame</div></div>
+      </div>
+
+      <div class="section-label">Vehicles (each vehicle counted once)</div>
+      <div class="vtype-grid" id="vtype-grid"></div>
+
+      <div class="stat-row" style="margin-top:16px">
+        <div class="stat"><div class="stat-value" id="stat-people">0</div><div class="stat-label">People</div></div>
+        <div class="stat"><div class="stat-value" id="stat-plates">{{ plates | length }}</div><div class="stat-label">Plates read</div></div>
+        <div class="stat"><div class="stat-value" id="stat-events">{{ num_events }}</div><div class="stat-label">Events</div></div>
+      </div>
+
+      <div class="divider"></div>
+      <div id="start-panel" style="{{ 'display:none' if running }}">
+        <div class="field-block">
+          <div class="field-row">
+            <label class="field">Road map
+              <select id="f-scene">
+                <option value="">None &mdash; zone/lane events off</option>
+                {% for s in scenes %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}
+              </select>
+            </label>
+          </div>
+          <div class="field-row" style="margin-top:12px">
+            <label class="field">Latitude<input type="text" id="f-lat"></label>
+            <label class="field">Longitude<input type="text" id="f-lon"></label>
+          </div>
+          <div class="field-row" style="margin-top:12px">
+            <label class="field">Meters per pixel<input type="text" id="f-mpp"></label>
+            <label class="field">Speed limit (km/h)<input type="text" id="f-speed"></label>
+          </div>
+        </div>
+        <label class="toggle-row">
+          <input type="checkbox" id="f-thorough">
+          <span class="toggle-switch"></span>
+          <span>Thorough scan (plate OCR every frame)</span>
+        </label>
+        <button class="btn btn-block" type="button" id="btn-start" style="margin-top:16px">Start camera</button>
+      </div>
+      <div id="stop-panel" style="{{ '' if running else 'display:none' }}">
+        <button class="btn btn-block" style="background:var(--danger)" type="button" id="btn-stop">Stop camera</button>
+        <a class="btn btn-ghost btn-block" style="margin-top:10px;{{ '' if job_id else 'display:none' }}" id="library-link" href="{{ url_for('library_detail', job_id=job_id) if job_id else '#' }}">View this session in library</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Live events</h3>
+    <p class="card-hint">Newest first.</p>
+    <ul class="event-list" id="event-list"></ul>
+    <div class="divider"></div>
+    <h3>Plates read</h3>
+    <ul class="plates" id="plate-list">
+      {% for p in plates %}<li class="plate-chip"><span class="flag">IND</span>{{ p }}</li>{% else %}<li class="empty-note">None yet.</li>{% endfor %}
+    </ul>
+    <div class="divider"></div>
+    <h3>Detections by class</h3>
+    <p class="card-hint">Running total across every class the model knows, including accident_scene / road_construction / traffic_cone.</p>
+    <ul class="event-list" id="class-count-list"><li class="empty-note">None yet.</li></ul>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/events.js') }}"></script>
+<script>
+(() => {
+  const video = document.getElementById('local-video'), overlay = document.getElementById('overlay');
+  const streamEmpty = document.getElementById('stream-empty'), liveBadge = document.getElementById('live-badge');
+  const startPanel = document.getElementById('start-panel'), stopPanel = document.getElementById('stop-panel');
+  const octx = overlay.getContext('2d');
+  const capture = document.createElement('canvas');
+  const cctx = capture.getContext('2d');
+  let stream = null, ws = null;
+
+  function setError(msg) {
+    const eb = document.getElementById('error-box');
+    if (!msg) { eb.style.display = 'none'; return; }
+    eb.style.display = 'flex';
+    document.getElementById('error-text').textContent = msg;
+  }
+
+  function drawBoxes(boxes) {
+    octx.clearRect(0, 0, overlay.width, overlay.height);
+    for (const b of boxes) {
+      const [x0, y0, x1, y1] = b.box, [r, g, bch] = b.color || [79, 124, 255];
+      octx.strokeStyle = `rgb(${r},${g},${bch})`;
+      octx.lineWidth = 2;
+      octx.strokeRect(x0, y0, x1 - x0, y1 - y0);
+      octx.font = '13px sans-serif';
+      const textW = octx.measureText(b.label).width + 8;
+      octx.fillStyle = `rgb(${r},${g},${bch})`;
+      octx.fillRect(x0, Math.max(0, y0 - 18), textW, 18);
+      octx.fillStyle = '#0a0c10';
+      octx.fillText(b.label, x0 + 4, Math.max(12, y0 - 5));
+    }
+  }
+
+  async function sendLoop() {
+    if (!ws || ws.readyState !== WebSocket.OPEN || video.paused || video.ended) return;
+    cctx.drawImage(video, 0, 0, capture.width, capture.height);
+    capture.toBlob(blob => {
+      if (!blob || !ws || ws.readyState !== WebSocket.OPEN) return;
+      ws.send(blob);
+    }, 'image/jpeg', 0.7);
+  }
+
+  async function start() {
+    setError(null);
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false
+      });
+    } catch (e) {
+      setError('Could not access camera: ' + e.message + ' (browser needs permission, and the page must be https:// or localhost).');
+      return;
+    }
+    video.srcObject = stream;
+    await video.play();
+
+    const w = video.videoWidth, h = video.videoHeight;
+    capture.width = w; capture.height = h;
+    overlay.width = w; overlay.height = h;
+    video.style.display = 'block'; overlay.style.display = 'block';
+    streamEmpty.style.display = 'none'; liveBadge.style.display = 'inline-flex';
+
+    const form = new FormData();
+    form.set('thorough', document.getElementById('f-thorough').checked ? 'on' : '');
+    form.set('latitude', document.getElementById('f-lat').value);
+    form.set('longitude', document.getElementById('f-lon').value);
+    form.set('meters_per_pixel', document.getElementById('f-mpp').value);
+    form.set('speed_limit', document.getElementById('f-speed').value);
+    form.set('scene_id', document.getElementById('f-scene').value);
+    const r = await fetch('{{ url_for("live_start") }}', { method: 'POST', body: form });
+    const started = await r.json();
+    if (!started.ok) { setError(started.error || 'could not start session'); stopTracks(); return; }
+
+    const link = document.getElementById('library-link');
+    link.href = '/library/' + started.job_id;
+    link.style.display = 'block';
+    startPanel.style.display = 'none';
+    stopPanel.style.display = 'block';
+
+    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    ws = new WebSocket(`${proto}//${location.host}/live_ws`);
+    ws.binaryType = 'blob';
+    ws.onopen = () => {
+      ws.send(JSON.stringify({ width: w, height: h, fps: 6 }));
+      sendLoop();
+    };
+    ws.onmessage = ev => {
+      const boxes = JSON.parse(ev.data);
+      drawBoxes(boxes);
+      sendLoop();  // request-response paced: only ask for the next frame once this one's done
+    };
+    ws.onclose = () => stopTracks();
+    ws.onerror = () => setError('Live connection dropped.');
+  }
+
+  function stopTracks() {
+    if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+    video.style.display = 'none'; overlay.style.display = 'none';
+    liveBadge.style.display = 'none';
+    streamEmpty.textContent = 'Camera is not running.';
+    streamEmpty.style.display = 'block';
+    startPanel.style.display = 'block';
+    stopPanel.style.display = 'none';
+  }
+
+  async function stop() {
+    if (ws) { try { ws.close(); } catch (e) {} ws = null; }
+    await fetch('{{ url_for("live_stop") }}', { method: 'POST' });
+    stopTracks();
+  }
+
+  document.getElementById('btn-start').addEventListener('click', start);
+  document.getElementById('btn-stop').addEventListener('click', stop);
+
+  // status/events/plates sidebar -- server-truth polling, independent of who's driving the camera
+  const eventList = document.getElementById('event-list'), plateList = document.getElementById('plate-list');
+  function poll() {
+    fetch('/live_status').then(r => r.json()).then(s => {
+      renderVehicleTypes(document.getElementById('vtype-grid'), s);
+      renderSpeed(s);
+      document.getElementById('stat-people').textContent = s.num_people || 0;
+      document.getElementById('stat-plates').textContent = s.plates.length;
+      document.getElementById('stat-events').textContent = s.num_events;
+      const badge = document.getElementById('status-badge');
+      if (badge) { badge.className = 'status-badge status-' + s.status; document.getElementById('status-text').textContent = s.status; }
+      renderEvents(eventList, s.events);
+      if (s.plates.length) plateList.innerHTML = s.plates.map(p => `<li class="plate-chip"><span class="flag">IND</span>${p}${((s.plate_counts || {})[p] || 1) > 1 ? ` <strong>&times;${s.plate_counts[p]}</strong>` : ''}</li>`).join('');
+      const classEntries = Object.entries(s.detection_counts || {}).sort((a, b) => b[1] - a[1]);
+      const classList = document.getElementById('class-count-list');
+      if (classList) {
+        classList.innerHTML = classEntries.length
+          ? classEntries.map(([name, n]) => `<li>${name}: <strong>${n}</strong></li>`).join('')
+          : '<li class="empty-note">None yet.</li>';
+      }
+      if (s.error) setError(s.error);
+      setTimeout(poll, 1500);
+    }).catch(() => setTimeout(poll, 2500));
+  }
+  poll();
+})();
+</script>
+{% endblock %}

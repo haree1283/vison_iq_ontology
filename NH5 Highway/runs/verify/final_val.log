@@ -1,0 +1,16 @@
+Per-class validation of best.pt (run by training at end of epoch 100, 2026-09-26 15:10; val split 8819 images, imgsz 960)
+                 Class     Images  Instances      Box(P          R      mAP50  mAP50-95): 100% ━━━━━━━━━━━━ 138/138 3.8it/s 36.5s
+                   all       8819      48119      0.788      0.756      0.812      0.602
+                person       3174      12140      0.754      0.736      0.798      0.591
+               bicycle        405        601      0.719      0.684      0.728      0.514
+                   car       5200      14704      0.843      0.858      0.913      0.787
+            motorcycle       1443       5493      0.821      0.779      0.864      0.616
+                   bus        878       1652      0.781      0.791       0.84      0.694
+                 truck       2656       4159      0.718      0.735      0.795      0.669
+               pothole        604       1409      0.759      0.457      0.578      0.287
+         license_plate       1834       2000       0.94      0.868      0.934      0.764
+                  auto       1171       2957      0.848      0.856       0.91       0.72
+     road_construction       1484       1484      0.753      0.639      0.723      0.412
+        accident_scene        929        971      0.816      0.799      0.851      0.582
+         fire_accident        549        549      0.698      0.875      0.813      0.592
+Speed: 0.7ms preprocess, 0.8ms inference, 0.0ms loss, 0.6ms postprocess per image

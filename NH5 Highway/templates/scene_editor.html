@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}{{ scene.name }}{% endblock %}
+{% block page_title %}{{ scene.name }}{% endblock %}
+{% block page_sub %}Draw road/roadside/crossing zones and lanes. A lane needs a travel-direction arrow for wrong-side detection to work.{% endblock %}
+{% block content %}
+<div class="grid editor-grid">
+  <div class="card">
+    <div class="tool-row">
+      <button type="button" class="tool-btn active" data-tool="road"><span class="shape-chip" style="background:#c4c4c4"></span>Road area</button>
+      <button type="button" class="tool-btn" data-tool="roadside"><span class="shape-chip" style="background:#50c86e"></span>Roadside</button>
+      <button type="button" class="tool-btn" data-tool="crossing"><span class="shape-chip" style="background:#ffffff"></span>Zebra crossing</button>
+      <button type="button" class="tool-btn" data-tool="lane"><span class="shape-chip" style="background:#00c8ff"></span>Lane</button>
+    </div>
+    <div class="editor-canvas-wrap"><canvas id="scene-canvas"></canvas></div>
+    <div class="editor-hint" id="editor-hint"></div>
+  </div>
+
+  <div class="card">
+    <label class="field">Name<input type="text" id="scene-name" value="{{ scene.name }}"></label>
+    <div class="divider"></div>
+    <h3>Shapes</h3>
+    <ul class="shape-list" id="shape-list"></ul>
+    <div class="divider"></div>
+    <button class="btn btn-block" id="save-btn" type="button">Save road map</button>
+    <p class="card-hint" id="save-status" style="margin-top:10px;text-align:center"></p>
+    <div class="divider"></div>
+    <form method="post" action="{{ url_for('scene_delete', scene_id=scene.id) }}" onsubmit="return confirm('Delete this road map? Videos already processed with it keep their results.');">
+      <button class="btn" style="background:var(--danger)" type="submit">Delete road map</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>window.SCENE_EDITOR = {{ editor_cfg | tojson }};</script>
+<script src="{{ url_for('static', filename='js/scene_editor.js') }}"></script>
+{% endblock %}

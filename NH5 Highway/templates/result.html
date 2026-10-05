@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}Result{% endblock %}
+{% block page_title %}Processing result{% endblock %}
+{% block page_sub %}{{ 'Thorough scan' if thorough else 'Fast scan' }}{% if scene_name %} &middot; road map: {{ scene_name }}{% else %} &middot; no road map selected{% endif %}{% endblock %}
+{% block content %}
+<div class="grid">
+  <div>
+    <div class="card">
+      <div class="stream-wrap" id="stream-wrap">
+        <img id="stream-img" src="{{ url_for('stream', job_id=job_id) }}" alt="annotated stream">
+      </div>
+      <div style="margin-top:14px" id="status-row">
+        <span class="status-badge status-processing" id="status-badge"><span class="dot"></span><span id="status-text">processing</span></span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="progress-label"><span id="progress-text">0 / 0 frames</span><span id="fps-text"></span></div>
+
+      <div class="speed-row" id="speed-row">
+        <div class="stat"><div class="stat-value" id="sp-frames">0</div><div class="stat-label">Frames processed</div></div>
+        <div class="stat"><div class="stat-value" id="sp-fps">&ndash;</div><div class="stat-label">Frames / second</div></div>
+        <div class="stat"><div class="stat-value" id="sp-ms">&ndash;</div><div class="stat-label">Time per frame</div></div>
+        <div class="stat"><div class="stat-value" id="sp-eta">&ndash;</div><div class="stat-label">Time left</div></div>
+      </div>
+
+      <div class="section-label">Vehicles (each vehicle counted once)</div>
+      <div class="vtype-grid" id="vtype-grid"></div>
+
+      <div class="stat-row" style="margin-top:16px">
+        <div class="stat"><div class="stat-value" id="stat-people">0</div><div class="stat-label">People</div></div>
+        <div class="stat"><div class="stat-value" id="stat-plates">0</div><div class="stat-label">Plates read</div></div>
+        <div class="stat"><div class="stat-value" id="stat-events">0</div><div class="stat-label">Events</div></div>
+      </div>
+
+      <div class="divider"></div>
+      <div id="done-links" style="display:none">
+        <a class="btn" id="link-library" href="#">View in library</a>
+        <a class="btn btn-ghost" id="link-report" href="#" style="margin-left:8px">Excel report</a>
+      </div>
+      <div id="error-box" style="display:none" class="alert alert-danger">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>
+        <span id="error-text"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Live events</h3>
+    <p class="card-hint">Newest first.</p>
+    <ul class="event-list" id="event-list"></ul>
+    <div class="divider"></div>
+    <h3>Plates read</h3>
+    <ul class="plates" id="plate-list"><li class="empty-note">None yet.</li></ul>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/events.js') }}"></script>
+<script>
+  const jobId = {{ job_id | tojson }};
+  const statusBadge = document.getElementById('status-badge'), statusText = document.getElementById('status-text'),
+        fill = document.getElementById('progress-fill'), progressText = document.getElementById('progress-text'),
+        fpsText = document.getElementById('fps-text'), eventList = document.getElementById('event-list'),
+        plateList = document.getElementById('plate-list'), doneLinks = document.getElementById('done-links'),
+        errorBox = document.getElementById('error-box'), streamWrap = document.getElementById('stream-wrap');
+  let switched = false;
+
+  function poll() {
+    fetch(`/status/${jobId}`).then(r => {
+      if (r.status === 404) {
+        statusBadge.className = 'status-badge status-error';
+        statusText.textContent = 'lost';
+        errorBox.style.display = 'flex';
+        document.getElementById('error-text').textContent =
+          'This job is no longer known to the server (it was likely restarted mid-process). ' +
+          'Please upload the video again.';
+        return null;
+      }
+      return r.json();
+    }).then(s => {
+      if (s === null) return;  // job lost after a server restart -- message already shown above
+      statusBadge.className = 'status-badge status-' + s.status;
+      statusText.textContent = s.status;
+      renderVehicleTypes(document.getElementById('vtype-grid'), s);
+      renderSpeed(s);
+      document.getElementById('stat-people').textContent = s.num_people || 0;
+      document.getElementById('stat-plates').textContent = s.plates.length;
+      document.getElementById('stat-events').textContent = s.num_events;
+      fpsText.textContent = s.processing_fps ? `${s.processing_fps} fps` : '';
+      if (s.total_frames) {
+        fill.style.width = Math.min(100, 100 * s.frame_idx / s.total_frames) + '%';
+        progressText.textContent = `${s.frame_idx} / ${s.total_frames} frames`;
+      } else {
+        progressText.textContent = `${s.frame_idx} frames`;
+      }
+      renderEvents(eventList, s.events);
+      plateList.innerHTML = s.plates.length
+        ? s.plates.map(p => `<li class="plate-chip"><span class="flag">IND</span>${p}${((s.plate_counts || {})[p] || 1) > 1 ? ` <strong>&times;${s.plate_counts[p]}</strong>` : ''}</li>`).join('')
+        : '<li class="empty-note">None yet.</li>';
+
+      if (s.status === 'error') {
+        errorBox.style.display = 'flex';
+        document.getElementById('error-text').textContent = s.error || 'processing failed';
+        return;
+      }
+      if (s.status === 'done' && !switched) {
+        switched = true;
+        streamWrap.innerHTML = `<video src="/media/${jobId}/annotated.mp4" controls autoplay muted></video>`;
+        doneLinks.style.display = 'block';
+        document.getElementById('link-library').href = `/library/${jobId}`;
+        document.getElementById('link-report').href = `/download/${jobId}/report.xlsx`;
+        return;
+      }
+      setTimeout(poll, 1000);
+    }).catch(() => setTimeout(poll, 2000));
+  }
+  poll();
+</script>
+{% endblock %}

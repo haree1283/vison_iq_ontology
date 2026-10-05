@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Model{% endblock %}
+{% block page_title %}Model{% endblock %}
+{% block page_sub %}The detector currently loaded by this server -- every upload, live session and report uses this model.{% endblock %}
+{% block content %}
+<div class="card">
+  <h3>{{ model_name or 'unknown' }}{% if model_arch %} <span class="status-badge">{{ model_arch }}</span>{% endif %}</h3>
+  <p class="card-hint">{{ model_summary or model_description or 'no model loaded' }}</p>
+
+  <dl style="margin-top:18px">
+    <div class="kv-row"><dt>Architecture</dt><dd>{{ model_arch or '&mdash;' }}</dd></div>
+    <div class="kv-row"><dt>Checkpoint</dt><dd style="font-family:var(--font-mono)">{{ model_path or '&mdash;' }}</dd></div>
+    <div class="kv-row"><dt>Device</dt><dd>{{ device }}</dd></div>
+    <div class="kv-row"><dt>Classes</dt><dd>{{ model_classes | length }}</dd></div>
+  </dl>
+
+  {% if model_classes %}
+  <div class="divider"></div>
+  <h3>Detected classes</h3>
+  <div class="class-chips">
+    {% for c in model_classes %}<span class="class-chip">{{ c }}</span>{% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h3>Changing the model</h3>
+  <p class="card-hint">Restart the server pointing <code>--model</code> at a different checkpoint's <code>weights/best.pt</code>. This page, and every new job's Library entry, updates automatically to whatever it finds baked into that checkpoint.</p>
+</div>
+{% endblock %}

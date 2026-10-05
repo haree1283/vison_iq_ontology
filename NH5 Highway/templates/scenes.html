@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Road maps{% endblock %}
+{% block page_title %}Road maps{% endblock %}
+{% block page_sub %}Draw lanes and zones once per fixed camera to turn on jaywalking, lane-change and wrong-side-driving detection.{% endblock %}
+{% block content %}
+<div class="grid">
+  <div>
+    {% if not scenes %}
+    <div class="card"><p class="empty-note">No road maps yet &mdash; add one on the right to get started.</p></div>
+    {% else %}
+    <div class="lib-grid">
+      {% for s in scenes %}
+      <a class="lib-card" href="{{ url_for('scene_editor', scene_id=s.id) }}">
+        <div class="lib-thumb">
+          {% if s.has_preview or s.has_frame %}
+          <img src="{{ url_for('scene_image', scene_id=s.id, kind='preview' if s.has_preview else 'frame') }}" alt="">
+          {% else %}
+          <div class="lib-thumb-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 3 3 6v15l6-3 6 3 6-3V3l-6 3-6-3Z"/></svg></div>
+          {% endif %}
+        </div>
+        <div class="lib-body">
+          <div class="lib-name">{{ s.name }}</div>
+          <div class="lib-meta">{{ s.lanes | length }} lane{{ '' if s.lanes|length == 1 else 's' }} &middot; {{ s.zones | length }} zone{{ '' if s.zones|length == 1 else 's' }}</div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h3>New road map</h3>
+    <p class="card-hint">Upload a photo or short video from the fixed camera &mdash; the first frame becomes the map background.</p>
+    {% if error %}
+    <div class="alert alert-danger" style="margin-top:12px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>
+      {{ error }}
+    </div>
+    {% endif %}
+    <form method="post" action="{{ url_for('scene_new') }}" enctype="multipart/form-data" style="margin-top:14px">
+      <label class="field">Name<input type="text" name="name" placeholder="e.g. NH5 km 42 overpass"></label>
+      <label class="field" style="margin-top:12px">Photo or video<input type="file" name="source" accept=".jpg,.jpeg,.png,.bmp,.mp4,.avi,.mov,.mkv" required></label>
+      <button class="btn btn-block" type="submit" style="margin-top:16px">Create road map</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

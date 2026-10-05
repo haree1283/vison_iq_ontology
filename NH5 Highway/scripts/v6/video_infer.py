@@ -1,0 +1,108 @@
+"""Stable video inference: ByteTrack ids + per-class confidence + temporal voting for accident/fire alerts.
+Usage: python3 video_infer.py --model best.pt --source video_or_dir --out outdir [--acc-conf 0.5 --vote 8 --window 15]"""
+import argparse, glob, json, os, collections
+import cv2
+from ultralytics import YOLO
+
+ap = argparse.ArgumentParser()
+ap.add_argument('--model', required=True); ap.add_argument('--source', required=True); ap.add_argument('--out', required=True)
+ap.add_argument('--imgsz', type=int, default=960)
+ap.add_argument('--conf', type=float, default=0.30, help='default class confidence')
+ap.add_argument('--acc-conf', type=float, default=0.50, help='accident_scene / fire_accident confidence')
+ap.add_argument('--window', type=int, default=15); ap.add_argument('--vote', type=int, default=8, help='frames in window needed to raise alert')
+ap.add_argument('--off', type=int, default=3, help='alert clears when fewer than this many frames in window')
+ap.add_argument('--thickness', type=int, default=0, help='box line thickness in px (0 = auto from video size)')
+a = ap.parse_args()
+os.makedirs(a.out, exist_ok=True)
+model = YOLO(a.model); names = model.names
+EVENT = {'accident_scene', 'fire_accident'}
+COLORS = {'person': (255, 120, 0), 'bicycle': (255, 0, 200), 'car': (0, 220, 0), 'motorcycle': (255, 0, 255), 'bus': (0, 255, 255), 'truck': (0, 165, 255),
+          'pothole': (60, 20, 220), 'license_plate': (255, 255, 255), 'auto': (255, 255, 0), 'road_construction': (160, 0, 160),
+          'accident_scene': (0, 0, 255), 'traffic_cone': (0, 215, 255), 'fire_accident': (0, 100, 255)}
+files = sorted(glob.glob(os.path.join(a.source, '*.mp4'))) if os.path.isdir(a.source) else [a.source]
+summary = {}
+GROUP = {'car', 'truck', 'bus', 'auto'}          # visually confusable vehicle types: dedupe boxes + one class per track
+INVOLVED = {'car', 'truck', 'bus', 'auto', 'motorcycle', 'bicycle', 'person'}
+
+def iou(p, q):
+    ix = max(0, min(p[2], q[2]) - max(p[0], q[0])); iy = max(0, min(p[3], q[3]) - max(p[1], q[1])); i = ix * iy
+    return i / ((p[2]-p[0])*(p[3]-p[1]) + (q[2]-q[0])*(q[3]-q[1]) - i + 1e-9)
+
+def inside_frac(v, e):  # fraction of vehicle box v lying inside event box e
+    ix = max(0, min(v[2], e[2]) - max(v[0], e[0])); iy = max(0, min(v[3], e[3]) - max(v[1], e[1]))
+    return ix * iy / ((v[2]-v[0])*(v[3]-v[1]) + 1e-9)
+
+for path in files:
+    votes = collections.defaultdict(collections.Counter)   # track id -> weighted class votes (GROUP classes only)
+    hist = {e: collections.deque(maxlen=a.window) for e in EVENT}
+    alert = {e: False for e in EVENT}; alert_frames = {e: 0 for e in EVENT}; raw_frames = {e: 0 for e in EVENT}
+    writer = None; n = 0; cls_tot = collections.Counter(); last_involved = {}; involved_total = collections.Counter()
+    track_len = collections.Counter(); per_frame = []   # stability stats: frames each drawn object track lives, objects drawn per frame
+    for r in model.track(path, stream=True, persist=True, tracker='bytetrack.yaml', imgsz=a.imgsz, conf=min(a.conf, a.acc_conf), verbose=False):
+        img = r.orig_img.copy(); n += 1
+        present = {e: 0.0 for e in EVENT}
+        keep = []
+        for b in r.boxes:
+            name = names[int(b.cls)]; c = float(b.conf)
+            if c < (a.acc_conf if name in EVENT else a.conf):
+                continue
+            if name in EVENT:
+                present[name] = max(present[name], c)
+            keep.append((name, c, b.xyxy[0].tolist(), int(b.id) if b.id is not None else -1))
+        # class-agnostic NMS among confusable vehicle types (accident/fire boxes are exempt so they can overlap vehicles)
+        keep.sort(key=lambda k: -k[1]); kept = []
+        for k in keep:
+            if k[0] in GROUP and any(o[0] in GROUP and iou(k[2], o[2]) > 0.6 for o in kept): continue
+            kept.append(k)
+        keep = kept
+        # one class per tracked vehicle: weighted majority over its whole history
+        for i, (name, c, bx, tid) in enumerate(keep):
+            if name in GROUP and tid >= 0:
+                votes[tid][name] += c
+                keep[i] = (votes[tid].most_common(1)[0][0], c, bx, tid)
+        for e in EVENT:
+            hist[e].append(1 if present[e] > 0 else 0); raw_frames[e] += int(present[e] > 0)
+            s = sum(hist[e])
+            if not alert[e] and s >= a.vote: alert[e] = True
+            elif alert[e] and s < a.off: alert[e] = False
+            alert_frames[e] += int(alert[e])
+        H_, W_ = img.shape[:2]; th = a.thickness or max(3, round(min(H_, W_) / 200)); fs = max(0.6, min(H_, W_) / 800)
+        # big event boxes first (behind), then objects on top so scene-level boxes never hide vehicles
+        for name, c, (x1, y1, x2, y2), tid in sorted(keep, key=lambda k: k[0] not in EVENT):
+            if name in EVENT and not alert[name]:
+                continue  # hide flickering event boxes until the temporal vote confirms
+            col = COLORS.get(name, (0, 255, 0)); t = th * 2 if name in EVENT else th
+            p1, p2 = (int(x1), int(y1)), (int(x2), int(y2))
+            cv2.rectangle(img, p1, p2, col, t)
+            label = f"{name}{'#'+str(tid) if tid >= 0 else ''} {c:.2f}"
+            (tw, tht), bl = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, fs, max(1, th // 2))
+            ty = int(y1) if int(y1) - tht - bl - 4 < 0 else int(y1) - tht - bl - 4      # keep tag inside the frame
+            cv2.rectangle(img, (int(x1), ty), (int(x1) + tw + 6, ty + tht + bl + 4), col, -1)
+            cv2.putText(img, label, (int(x1) + 3, ty + tht + 1), cv2.FONT_HERSHEY_SIMPLEX, fs, (0, 0, 0), max(1, th // 2), cv2.LINE_AA)
+            cls_tot[name] += 1
+            if name not in EVENT and tid >= 0: track_len[tid] += 1
+        per_frame.append(sum(1 for k in keep if k[0] not in EVENT))
+        acc_boxes = [k[2] for k in keep if k[0] == 'accident_scene']
+        if acc_boxes:  # which vehicles / people sit inside the accident region right now
+            inv = collections.Counter(k[0] for k in keep if k[0] in INVOLVED and any(inside_frac(k[2], ab) > 0.5 for ab in acc_boxes))
+            if inv: last_involved = dict(inv)
+        for k, e in enumerate(sorted(EVENT)):
+            if alert[e]:
+                txt = f"{e.upper()} ALERT"
+                if e == 'accident_scene' and last_involved:
+                    txt += ": " + ", ".join(f"{v} {c}" for c, v in last_involved.items())
+                    involved_total.update(last_involved)
+                cv2.putText(img, txt, (10, 30 + 30 * k), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 3)
+        if writer is None:
+            h, w = img.shape[:2]
+            writer = cv2.VideoWriter(os.path.join(a.out, os.path.splitext(os.path.basename(path))[0] + '.mp4'), cv2.VideoWriter_fourcc(*'mp4v'), 30, (w, h))
+        writer.write(img)
+    if writer: writer.release()
+    mean_cnt = sum(per_frame) / max(1, len(per_frame))
+    stability = {'tracks': len(track_len),
+                 'mean_track_len': round(sum(track_len.values()) / max(1, len(track_len)), 1),
+                 'short_tracks_pct': round(100 * sum(1 for v in track_len.values() if v <= 5) / max(1, len(track_len)), 1),
+                 'count_jitter_pct': round(100 * sum(abs(x - y) for x, y in zip(per_frame, per_frame[1:])) / max(1, len(per_frame) - 1) / max(1e-9, mean_cnt), 1) if mean_cnt else 0.0}
+    summary[os.path.basename(path)] = {'frames': n, 'raw_event_frames': raw_frames, 'alert_frames': alert_frames, 'objects_drawn': dict(cls_tot), 'accident_involved_frames': dict(involved_total), 'stability': stability}
+    print(os.path.basename(path), summary[os.path.basename(path)], flush=True)
+json.dump(summary, open(os.path.join(a.out, 'summary.json'), 'w'), indent=1)

@@ -1,0 +1,24 @@
+# environments, builds, caches
+.venv/
+node_modules/
+dist/
+__pycache__/
+*.pyc
+
+# secrets and local database
+.env
+.env.*
+!.env.example
+*.db
+*.db-shm
+*.db-wal
+
+# uploaded and processed videos (large, local data)
+NH5 Highway/webapp_data/
+
+# PaddleOCR model files (183 MB; copy separately, see SETUP_NEW_SYSTEM.md)
+NH5 Highway/ocr_models/
+
+# local only
+.git-visioniq-origin/
+.~lock.*
